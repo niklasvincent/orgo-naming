@@ -1,26 +1,93 @@
 <html>
 <head>
 <meta http-equiv="X-UA-Compatible" content="chrome=1">
-<link rel="stylesheet" href="../install/ChemDoodleWeb.css" type="text/css">
-<link rel="stylesheet" href="../install/sketcher/jquery-ui-1.9.2.custom.css" type="text/css">
-
-<script type="text/javascript" src="../install/ChemDoodleWeb-libs.js"></script>
-<script type="text/javascript" src="../install/ChemDoodleWeb.js"></script>
-<script type="text/javascript" src="../install/sketcher/jquery-ui-1.9.2.custom.min.js"></script>
-<script type="text/javascript" src="../install/sketcher/ChemDoodleWeb-sketcher.js"></script>
-<title>ChemDoodle Web Component Sketcher (Single Molecule Sketcher)</title>
+<link rel="stylesheet" href="ChemDoodleWeb.css" type="text/css">
+<link rel="stylesheet" href="sketcher/jquery-ui-1.9.2.custom.css" type="text/css">
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script type="text/javascript" src="ChemDoodleWeb-libs.js"></script>
+<script type="text/javascript" src="ChemDoodleWeb.js"></script>
+<script type="text/javascript" src="sketcher/jquery-ui-1.9.2.custom.min.js"></script>
+<script type="text/javascript" src="sketcher/ChemDoodleWeb-sketcher.js"></script>
+<style type="text/css">
+canvas.ChemDoodleWebComponent {
+  /* no border */
+  border: none;
+  margin: 0 auto;
+  display: block;
+}
+#ui {
+  margin: 0 auto;
+  display: block;
+}
+#score {
+	font-size: 2em;
+}
+</style>
+<title>KOKA05</title>
 </head>
 <body>
-<script>
-  ChemDoodle.ELEMENT['H'].jmolColor = 'black';
-  ChemDoodle.ELEMENT['S'].jmolColor = '#B9A130';
-  var sketcher = new ChemDoodle.SketcherCanvas('sketcher', 500, 300,{useServices:true, oneMolecule:true});
-  sketcher.specs.atoms_displayTerminalCarbonLabels_2D = true;
-  sketcher.specs.atoms_useJMOLColors = true;
-  sketcher.specs.bonds_clearOverlaps_2D = true;
-  sketcher.repaint();
-</script>
-<br>
-<a href="http://web.chemdoodle.com" title="Open Source HTML5 Chemistry - ChemDoodle Web Components"><img src="http://web.chemdoodle.com/resources/images/badges/badge120x60.png" /></a>
+	<center>
+	<div id="ui">
+		<input type="text" id="guess" style="font-size: 2em;" />
+		<span id="score"></span>
+	</div>
+	</center>
+	<div>
+	<script>
+	function pickRandomProperty(obj) {
+	    var result;
+	    var count = 0;
+	    for (var prop in obj)
+	        if (Math.random() < 1/++count)
+	           result = prop;
+	    return result;
+	}
+	
+	$(document).ready(function() {
+		var myCanvas = new ChemDoodle.ViewerCanvas('molecule', 800, 600);
+		myCanvas.specs.bonds_width_2D = 6;
+		myCanvas.specs.bonds_saturationWidth_2D = .18;
+		myCanvas.specs.bonds_hashSpacing_2D = 2.5;
+		myCanvas.specs.atoms_font_size_2D = 48;
+		myCanvas.specs.atoms_font_families_2D = ['Helvetica', 'Arial', 'sans-serif'];
+		myCanvas.specs.atoms_displayTerminalCarbonLabels_2D = true;
+		myCanvas.specs.atoms_implicitHydrogens_2D = false;
+		myCanvas.specs.atoms_displayAllCarbonLabels_2D = true;
+		myCanvas.specs.atoms_useJMOLColors = true;
+		ChemDoodle.ELEMENT['H'].jmolColor = 'black';
+		
+		function loadMolecule(m) 
+		{
+			$.get('data/molecules/koka05/' + m + '.mol', function(data) {
+				var mol = ChemDoodle.readMOL(data);
+				mol.scaleToAverageBondLength(130);
+				myCanvas.loadMolecule(mol);
+				myCanvas.repaint();
+			});
+		}
+		
+		var score = 0;
+		
+		$.getJSON('exercise.json', function(data) {
+			var current = pickRandomProperty(data);
+			loadMolecule(data[current]);
+			$('#guess').bind('input', function() {
+				var guess = $("#guess").val();
+				console.log(guess + " === " + current);
+				if ( guess === current ) {
+					score = score + 1;
+					$('#guess').css({opacity: 0});
+					$('#guess').animate({opacity: 1}, 700 );
+					$('#guess').val('');
+					current = pickRandomProperty(data);
+					loadMolecule(data[current]);
+					$('#score').html(score + ' r&auml;tt');
+				}
+			});
+		});	
+	});
+	</script>
+	<canvas class="ChemDoodleWebComponent" id="molecule" width="800" height="600" alt="ChemDoodle Web Component" style="width: 800px; height: 600px; background-color: rgb(255, 255, 255);">This browser does not support HTML5/Canvas.</canvas>
+	</div>
 </body>
 </html>
